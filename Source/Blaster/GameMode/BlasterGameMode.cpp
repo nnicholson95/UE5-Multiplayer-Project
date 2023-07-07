@@ -1,0 +1,47 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "BlasterGameMode.h"
+#include "Blaster/Character/BlasterCharacter.h"
+#include "Blaster/PlayerController/BlasterPlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerStart.h"
+#include "Blaster/PlayerState/BlasterPlayerState.h"
+
+void ABlasterGameMode::PlayerEliminated(ABlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)
+{
+	ABlasterPlayerState* AttackerPlayerState = AttackerController ? Cast<ABlasterPlayerState>(AttackerController->PlayerState) : nullptr;
+	ABlasterPlayerState* VictimPlayerState = VictimController ? Cast<ABlasterPlayerState>(VictimController->PlayerState) : nullptr;
+
+	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+	{
+		AttackerPlayerState->AddToScore(1.f);
+	}
+
+	if (ElimmedCharacter)
+	{
+		ElimmedCharacter->Elim();
+	}
+}
+
+/*
+* Handles the respawning of the player by creating an array of players starts and then restarting a player at a randomly selected start
+* 
+* Called after the timer in Elim() in BlasterCharacter.cpp reaches 0
+*/
+void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
+{
+	if (ElimmedCharacter)
+	{
+		ElimmedCharacter->Reset(); //Calls DetachFromControllerPendingDestroy() to unpossess dead character
+		ElimmedCharacter->Destroy();
+	}
+	//Respawn
+	if (ElimmedController)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts); //populate an array of player starts
+		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1); //Select random int in the range of actors ((Actors - 1) prevents out of bounds)
+		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
+	}
+}
