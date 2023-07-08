@@ -122,6 +122,7 @@ private:
 	UFUNCTION()
 	void OnRep_Health();
 
+	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
 
 	bool bElimmed = false;
@@ -169,6 +170,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ElimBotSound;
 
+	UPROPERTY()
 	class ABlasterPlayerState* BlasterPlayerState;
 
 public:	
@@ -183,4 +185,6 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };

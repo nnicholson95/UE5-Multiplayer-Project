@@ -565,6 +565,9 @@ void ABlasterCharacter::UpdateHUDHealth()
 	}
 }
 
+/*
+* This updates the HUD as a side effect, because beginplay is only called once this ensures respawining players see the correct values
+*/
 void ABlasterCharacter::PollInit()
 {
 	if (BlasterPlayerState == nullptr)
@@ -573,6 +576,7 @@ void ABlasterCharacter::PollInit()
 		if (BlasterPlayerState)
 		{
 			BlasterPlayerState->AddToScore(0.f);
+			BlasterPlayerState->AddToDefeats(0);
 		}
 	}
 }
