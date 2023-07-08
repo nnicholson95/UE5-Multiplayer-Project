@@ -7,14 +7,17 @@
 
 void ABlasterPlayerState::AddToScore(float ScoreAmount)
 {
-	Score += ScoreAmount;
+	float NewScore = 0.f;
+	NewScore+= ScoreAmount;
+
+	SetScore(NewScore);
 	Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
 	if (Character)
 	{
 		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
 		if (Controller)
 		{
-			Controller->SetHUDScore(Score);
+			Controller->SetHUDScore(GetScore());
 		}
 	}
 }
@@ -31,7 +34,7 @@ void ABlasterPlayerState::OnRep_Score()
 		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
 		if (Controller)
 		{
-			Controller->SetHUDScore(Score);
+			Controller->SetHUDScore(GetScore());
 		}
 	}
 }
