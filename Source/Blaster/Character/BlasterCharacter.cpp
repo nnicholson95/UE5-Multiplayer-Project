@@ -170,10 +170,14 @@ void ABlasterCharacter::Destroyed()
 }
 
 /*
-* Multicast RPC that handles player elimantion and syncronizes character states
+* Multicast RPC that handles player elimination and synchronizes character states
 */
 void ABlasterCharacter::MulticastElim_Implementation()
 {
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDWeaponAmmo(0);
+	}
 	bElimmed = true;
 	PlayElimMontage();
 

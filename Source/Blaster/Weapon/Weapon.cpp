@@ -101,13 +101,12 @@ void AWeapon::OnRep_WeaponState()
 }
 
 /*
-* Responsible for changing ammo count per weapon as well as updating the HUD for weapon owner
+* Helper Function to set HUD ammo which occurs on server, client and in OnRepOwner (to initialize right away)
 * 
-* calls OnRep_Ammo because ammo is a replicated variable
+* Also called from CombatComponent.cpp in Equipped Weapon which ensures it sets HUD properly every time a weapon is picked up
 */
-void AWeapon::SpendRound()
+void AWeapon::SetHUDAmmo()
 {
-	Ammo--;
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
 
 	if (BlasterOwnerCharacter)
@@ -121,19 +120,40 @@ void AWeapon::SpendRound()
 }
 
 /*
+* Responsible for changing ammo count per weapon as well as updating the HUD for weapon owner
+* 
+* calls OnRep_Ammo because ammo is a replicated variable
+*/
+void AWeapon::SpendRound()
+{
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
+	SetHUDAmmo();
+}
+
+/*
 * Responsible for client things related to ammo
 */
 void AWeapon::OnRep_Ammo()
 {
-	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
+	SetHUDAmmo();
+}
 
-	if (BlasterOwnerCharacter)
+/*
+* Initialize HUD ammo on client
+* 
+* We know that after this concluded that GetOwner() will be valid so initializing the HUD ammo will work
+*/
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	if (Owner == nullptr)
 	{
-		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
-		if (BlasterOwnerController)
-		{
-			BlasterOwnerController->SetHUDWeaponAmmo(Ammo);
-		}
+		BlasterOwnerCharacter = nullptr;
+		BlasterOwnerController = nullptr;
+	}
+	else
+	{
+		SetHUDAmmo();
 	}
 }
 
@@ -206,5 +226,12 @@ void AWeapon::Dropped()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+	BlasterOwnerCharacter = nullptr;
+	BlasterOwnerController = nullptr;
+}
+
+bool AWeapon::IsEmpty()
+{
+	return Ammo <= 0;
 }
 
