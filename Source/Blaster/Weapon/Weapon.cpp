@@ -230,6 +230,18 @@ void AWeapon::Dropped()
 	BlasterOwnerController = nullptr;
 }
 
+/*
+* Change value of Ammo carried
+* 
+* Ammo is replicated and updated on the HUD so this works well for clients
+*/
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+	//This is to update the HUE for the Server
+	SetHUDAmmo();
+}
+
 bool AWeapon::IsEmpty()
 {
 	return Ammo <= 0;
