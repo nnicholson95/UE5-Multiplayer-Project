@@ -28,6 +28,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
+	DOREPLIFETIME(UCombatComponent, CombatState);
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
@@ -63,6 +64,74 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+/*
+* Called from blaster character regardless if player invoking the function is client or server
+* 
+* Clients should use an RPC to ask the server for a reload
+*/
+void UCombatComponent::Reload()
+{
+	//Check carried ammo because if its zero no need to waste bandwidth
+	//Check reloading to avoid spamming server with rpcs
+	if (CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
+	{
+		ServerReload();
+	}
+}
+
+/*
+* Server response to client reload RPC
+* Plays reload montage
+* 
+* Since Server RPCs only execute on server regardless of who invokes it we
+* create an enum to keep track of combat state
+*/
+void UCombatComponent::ServerReload_Implementation()
+{
+	if (Character == nullptr) return;
+	CombatState = ECombatState::ECS_Reloading;
+	HandleReload();
+}
+
+/*
+* Bluprint Callable funtion to reset combat state so that we can reset the rep notify
+* we need the rep notify to reset so that we can reload more than one time
+* 
+* without this the ECombatState gets stuck on "reloading"
+*/
+void UCombatComponent::FinishReloading()
+{
+	if (Character == nullptr) return;
+	if (Character->HasAuthority())
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+}
+
+/*
+* Rep notify for combatstate
+* 
+* this is the key to replicating our reload animation to all clients because it is called on
+* a state change to an already replicated enum
+*/
+void UCombatComponent::OnRep_CombatState()
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Reloading:
+		HandleReload();
+		break;
+	}
+}
+
+/*
+* Handles reload logic that plays on BOTH client and server to avoid copy/paste
+*/
+void UCombatComponent::HandleReload()
+{
+	Character->PlayReloadMontage();
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
@@ -366,4 +435,3 @@ void UCombatComponent::InitializeCarriedAmmo()
 {
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
 }
-
