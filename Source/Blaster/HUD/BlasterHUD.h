@@ -32,13 +32,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	TSubclassOf<class UUserWidget> CharacterOverlayClass;
-
-	class UCharacterOverlay* CharacterOverlay;
-
-protected:
-	virtual void BeginPlay() override;
 	void AddCharacterOverlay();
 
+	UPROPERTY()
+	class UCharacterOverlay* CharacterOverlay;
+protected:
+	virtual void BeginPlay() override;
+	
 private:
 	FHUDPackage HUDPackage;
 
