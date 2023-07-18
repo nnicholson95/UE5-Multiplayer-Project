@@ -8,11 +8,30 @@
 #include "Components/TextBlock.h"
 #include "Blaster/Character/BlasterCharacter.h"
 
+
 void ABlasterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	BlasterHUD = Cast<ABlasterHUD>(GetHUD());
+}
+
+void ABlasterPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	SetHUDTime();
+	CheckTimeSync(DeltaTime);
+}
+
+void ABlasterPlayerController::CheckTimeSync(float DeltaTime)
+{
+	TimeSyncRunningTime += DeltaTime;
+	if (IsLocalController() && TimeSyncRunningTime > TimeSyncFrequency)
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		TimeSyncRunningTime = 0.f;
+	}
 }
 
 void ABlasterPlayerController::OnPossess(APawn* InPawn)
@@ -99,4 +118,74 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	}
 }
 
+void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->MatchCountdownText;
+	if (bHUDValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
+		int32 Seconds = CountdownTime - Minutes * 60;
+
+		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+	}
+}
+
+
+void ABlasterPlayerController::SetHUDTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	if (CountdownInt != SecondsLeft)
+	{
+		SetHUDMatchCountdown(MatchTime - GetServerTime());
+	}
+
+	CountdownInt = SecondsLeft;
+}
+
+/*
+* Called on client executed on server
+* 
+* server will recieve the request, call the client rpc, send its own time and return the client time
+*/
+void ABlasterPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	float ServerTimeOfReciept = GetWorld()->GetTimeSeconds();
+	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReciept);
+}
+
+/*
+* We now have what we need to calculate the round trip time, which needs to be accounted for to synchronize clock states
+*/
+void ABlasterPlayerController::ClientReportServerTime_Implementation(float TimeOFClientRequest, float TimeServerRecievedClientRequest)
+{
+	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOFClientRequest;
+	//This is an approximation that will bring the timer as close as possible because half of round trip time is assumed to be Server response time
+	float CurrentServerTime = TimeServerRecievedClientRequest + (0.5f * RoundTripTime);
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+float ABlasterPlayerController::GetServerTime()
+{
+	//server
+	if (HasAuthority()) return GetWorld()->GetTimeSeconds();
+	//client
+	return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+/*
+* Request the server time as soon as possible
+*/
+void ABlasterPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if (IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+	}
+}
 
