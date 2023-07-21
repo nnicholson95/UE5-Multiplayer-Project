@@ -59,6 +59,9 @@ void AProjectile::Tick(float DeltaTime)
 
 }
 
+/*
+* Spawing an emmitter and sound on impace location
+*/
 void AProjectile::Destroyed()
 {
 	Super::Destroyed();
