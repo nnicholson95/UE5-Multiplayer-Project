@@ -36,6 +36,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* LoopSoundAttenuation;
 
+	UPROPERTY(VisibleAnywhere)
+	class URocketMovementComponent* RocketMovementComponent;
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* RocketMesh;
