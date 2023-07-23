@@ -5,6 +5,8 @@
 * necessary JUST to get the enum is unnecessary
 */
 
+#define TRACE_LENGTH 80000
+
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
