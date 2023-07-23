@@ -4,6 +4,7 @@
 #include "Blaster/Character/BlasterCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -11,10 +12,11 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (OwnerPawn == nullptr) return;
+	//Not valid on simulated proxies so check on server only
 	AController* InstigatorController = OwnerPawn->GetController();
 
 	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-	if (MuzzleFlashSocket && InstigatorController)
+	if (MuzzleFlashSocket)
 	{
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = SocketTransform.GetLocation();
@@ -36,18 +38,16 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			{
 				BeamEnd = FireHit.ImpactPoint;
 				ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(FireHit.GetActor());
-				if (BlasterCharacter)
+				if (BlasterCharacter && HasAuthority() && InstigatorController)
 				{
 					//Server Authority for Damage application
-					if (HasAuthority()) {
-						UGameplayStatics::ApplyDamage(
-							BlasterCharacter,
-							Damage,
-							InstigatorController,
-							this,
-							UDamageType::StaticClass()
-						);
-					}
+					UGameplayStatics::ApplyDamage(
+						BlasterCharacter,
+						Damage,
+						InstigatorController,
+						this,
+						UDamageType::StaticClass()
+					);
 				}
 				if (ImpactParticles)
 				{
@@ -56,6 +56,14 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 						ImpactParticles,
 						FireHit.ImpactPoint,
 						FireHit.ImpactNormal.Rotation()
+					);
+				}
+				if (HitSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(
+						this,
+						HitSound,
+						FireHit.ImpactPoint
 					);
 				}
 			}
@@ -72,6 +80,22 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 					Beam->SetVectorParameter(FName("Target"), BeamEnd);
 				}
 			}
+		}
+		if (MuzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(
+				World,
+				MuzzleFlash,
+				SocketTransform
+			);
+		}
+		if (FireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				FireSound,
+				GetActorLocation()
+			);
 		}
 	}
 }
