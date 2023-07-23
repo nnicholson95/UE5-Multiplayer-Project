@@ -99,3 +99,11 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		}
 	}
 }
+
+FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
+{
+	FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+
+	return FVector::ZeroVector;
+}
