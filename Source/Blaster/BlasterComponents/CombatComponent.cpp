@@ -140,6 +140,27 @@ void UCombatComponent::UpdateAmmoValues()
 	EquippedWeapon->AddAmmo(-ReloadAmount);
 }
 
+void UCombatComponent::UpdateShotgunAmmoValues()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
+
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= 1;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+	EquippedWeapon->AddAmmo(-1);
+	if (EquippedWeapon->IsFull())
+	{
+		//Jump to ShotgunEnd Montage section
+	}
+}
+
 /*
 * Bluprint Callable funtion to reset combat state so that we can reset the rep notify
 * we need the rep notify to reset so that we can reload more than one time
@@ -421,6 +442,14 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 	if (bFireButtonPressed && EquippedWeapon)
 	{
 		Fire();
+	}
+}
+
+void UCombatComponent::ShotgunShellReload()
+{
+	if (Character && Character->HasAuthority())
+	{
+		UpdateShotgunAmmoValues();
 	}
 }
 

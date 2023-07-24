@@ -266,3 +266,8 @@ bool AWeapon::IsEmpty()
 	return Ammo <= 0;
 }
 
+bool AWeapon::IsFull()
+{
+	return Ammo == MagCapacity;
+}
+
