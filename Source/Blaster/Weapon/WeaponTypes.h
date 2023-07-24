@@ -7,6 +7,10 @@
 
 #define TRACE_LENGTH 80000
 
+/*
+* Don't forget to add starting ammo to combat component
+* also add reload montage section in blaster character
+*/
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
@@ -16,6 +20,7 @@ enum class EWeaponType : uint8
 	EWT_SubmachineGun UMETA(DisplayName = "Submachine Gun"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_SniperRifle UMETA(DisplayName = "Sniper Rifle"),
+	EWT_GrenadeLauncher UMETA(DisplayName = "Grenade Launcher"),
 
 	EWT_MAX UMETA(DisplayName = "DefaultMax")
 };

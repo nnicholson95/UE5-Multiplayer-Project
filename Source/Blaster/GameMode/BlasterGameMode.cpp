@@ -51,7 +51,7 @@ void ABlasterGameMode::Tick(float DeltaTime)
 	else if (MatchState == MatchState::Cooldown)
 	{
 		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
-		if (CooldownTime <= 0.f)
+		if (CountdownTime <= 0.f)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Should restart!"));
 			RestartGame();
