@@ -35,6 +35,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
 	//So we do not double equip a weapon, drop the currently carried weapon
 	if (EquippedWeapon)
 	{
@@ -91,8 +92,8 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 void UCombatComponent::Reload()
 {
 	//Check carried ammo because if its zero no need to waste bandwidth
-	//Check reloading to avoid spamming server with rpcs
-	if (CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
+	//Check that we are unnocuppied to avoid spamming server with rpcs -- no need to reload if we are performing action
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerReload();
 	}
@@ -215,6 +216,13 @@ void UCombatComponent::OnRep_CombatState()
 			Fire();
 		}
 		break;
+	case ECombatState::ECS_ThrowingGrenade:
+		//Don't call the animation again for local character because we already did it
+		if (Character && !Character->IsLocallyControlled())
+		{
+			Character->PlayThrowGrenadeMontage();
+		}
+		break;
 	}
 }
 
@@ -244,6 +252,45 @@ int32 UCombatComponent::AmountToReload()
 		return FMath::Clamp(RoomInMag, 0, Least);
 	}
 	return 0;
+}
+
+void UCombatComponent::ThrowGrenade()
+{
+	//Avoid Spam
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	//Play the montage right away, even before we send the Server RPC
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
+	//Don't call server RPC on Server because it will double play the animation
+	if (Character && !Character->HasAuthority())
+	{
+		//Server RPC
+		ServerThrowGrenade();
+	}
+}
+
+/*
+* Server RPC handling grenade logic
+*/
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	/*
+	* Only happens on the SERVER, which means that other clients won't see the animation yet
+	* Our Combat state is replicated, so it has a rep notify OnRep_CombatState
+	*/
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
+}
+
+void UCombatComponent::ThrowGrenadeFinished()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
