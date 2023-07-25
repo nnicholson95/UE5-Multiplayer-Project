@@ -12,6 +12,7 @@
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
 #include "Sound/SoundCue.h"
+#include "Blaster/Character/BlasterAnimInstance.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -155,9 +156,22 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
 	}
 	EquippedWeapon->AddAmmo(-1);
-	if (EquippedWeapon->IsFull())
+	bCanFire = true;
+	//  -- This completes on the SERVER - CLIENT call in combat component OnRep_Ammo
+	// Carried Ammo is Replicated -- Use rep notify to make sure client stops loading shotgun shells when out of carried ammo
+	if (EquippedWeapon->IsFull() || CarriedAmmo == 0)
 	{
-		//Jump to ShotgunEnd Montage section
+		JumpToShotgunEnd();
+	}
+}
+
+void UCombatComponent::JumpToShotgunEnd()
+{
+	//Jump to ShotgunEnd Montage section
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && Character->GetReloadMontage())
+	{
+		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
 	}
 }
 
@@ -534,6 +548,14 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 void UCombatComponent::MultiCastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
+	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		Character->PlayFireMontage(bAiming);
+		EquippedWeapon->Fire(TraceHitTarget);
+		//Reset stat even if we never make it to the anim notify at the end of the reload montage
+		CombatState = ECombatState::ECS_Unoccupied;
+		return;
+	}
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
@@ -544,7 +566,8 @@ void UCombatComponent::MultiCastFire_Implementation(const FVector_NetQuantize& T
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
-
+	//Check Reloading While holding shotgun to allow reload cancel
+	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
 
@@ -557,6 +580,14 @@ void UCombatComponent::OnRep_CarriedAmmo()
 	if (Controller)
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+	bool bJumpToShotgunEnd = CombatState == ECombatState::ECS_Reloading &&
+		EquippedWeapon != nullptr &&
+		EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun &&
+		CarriedAmmo == 0;
+	if (bJumpToShotgunEnd) 
+	{
+		JumpToShotgunEnd();
 	}
 }
 

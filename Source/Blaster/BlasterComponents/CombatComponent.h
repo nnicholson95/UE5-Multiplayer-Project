@@ -29,6 +29,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bIsAiming);
