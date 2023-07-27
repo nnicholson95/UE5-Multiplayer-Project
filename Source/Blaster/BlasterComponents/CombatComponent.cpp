@@ -358,13 +358,31 @@ void UCombatComponent::ThrowGrenadeFinished()
 	AttachActorToRightHand(EquippedWeapon);
 }
 
+/*
+* Called from blueprints after animnotify
+*/
 void UCombatComponent::LaunchGrenade()
 {
 	ShowAttachedGrenade(false);
-	if (Character && Character->HasAuthority() && Character->GetAttachedGrenade()  && GrenadeClass)
+	//As a reminder HitTarget is calculated every frame in tick so we verify local control
+	if (Character && Character->IsLocallyControlled())
+	{
+		ServerLaunchGrenade(HitTarget);
+	}
+}
+
+/*
+* ServerRPC that allows us to throw a grenade
+* 
+* This allows us to synchronize HitTarget from clients 
+*/
+void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
+{
+	//No need to check authority as server RPCs called on the server
+	if (Character && Character->GetAttachedGrenade() && GrenadeClass)
 	{
 		const FVector StartingLocation = Character->GetAttachedGrenade()->GetComponentLocation();
-		FVector ToTarget = HitTarget - StartingLocation;
+		FVector ToTarget = Target - StartingLocation;
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = Character;
 		//When we call apply damage in AProjectile we use an instigator in the Explode and Fire methods so we need it here
