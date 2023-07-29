@@ -442,6 +442,24 @@ void UCombatComponent::OnRep_EquippedWeapon()
 	}
 }
 
+/*
+* Change the ammo map after interacting with an ammo pickup
+*/
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		//Make sure we do not exceed our max carried ammo -- TODO switch this per gun
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+
+		UpdateCarriedAmmo();
+	}
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
+
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
