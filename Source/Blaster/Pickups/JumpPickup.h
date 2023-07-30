@@ -2,14 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Pickup.h"
-#include "HealthPickup.generated.h"
+#include "JumpPickup.generated.h"
 
 UCLASS()
-class BLASTER_API AHealthPickup : public APickup
+class BLASTER_API AJumpPickup : public APickup
 {
 	GENERATED_BODY()
-public:
-	AHealthPickup();
 
 protected:
 	virtual void OnSphereOverlap(
@@ -20,11 +18,11 @@ protected:
 		bool BFromSweep,
 		const FHitResult& SweepResult
 	) override;
-
+	
 private:
 	UPROPERTY(EditAnywhere)
-	float HealAmount = 100.f;
+	float JumpZVelocityBuff = 4000.f;
 
 	UPROPERTY(EditAnywhere)
-	float HealingTime = 5.f;
+	float JumpBuffTime = 30.f;
 };
