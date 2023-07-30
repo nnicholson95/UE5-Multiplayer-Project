@@ -152,14 +152,17 @@ private:
 	/*
 	* Player Shield
 	*/
-	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	UPROPERTY(ReplicatedUsing = OnRep_MaxShield, EditAnywhere, Category = "Player Stats")
 	float MaxShield = 100.f;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player Stats")
-	float Shield = 100.f;
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, EditAnywhere, Category = "Player Stats")
+	float Shield = 0.f;
 
 	UFUNCTION()
 	void OnRep_Shield(float LastShield);
+
+	UFUNCTION()
+	void OnRep_MaxShield();
 
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
@@ -235,6 +238,8 @@ public:
 	FORCEINLINE float GetShield() const { return Shield; }
 	FORCEINLINE float GetMaxShield() const { return MaxShield; }
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; }
+	FORCEINLINE void SetMaxShield(float Amount) { MaxShield = Amount; }
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }

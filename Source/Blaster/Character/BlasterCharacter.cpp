@@ -76,6 +76,7 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ABlasterCharacter, Health);
 	DOREPLIFETIME(ABlasterCharacter, Shield);
+	DOREPLIFETIME(ABlasterCharacter, MaxShield);
 	DOREPLIFETIME(ABlasterCharacter, bDisableGameplay);
 }
 
@@ -126,6 +127,7 @@ void ABlasterCharacter::PostInitializeComponents()
 		Buff->Character = this;
 		Buff->SetInitialSpeeds(GetCharacterMovement()->MaxWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched);
 		Buff->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
+		Buff->SetInitialMaxShield(GetMaxShield());
 	}
 }
 
@@ -722,6 +724,11 @@ void ABlasterCharacter::OnRep_Shield(float LastShield)
 	{
 		PlayHitReactMontage();
 	}
+}
+
+void ABlasterCharacter::OnRep_MaxShield()
+{
+	UpdateHUDShield();
 }
 
 void ABlasterCharacter::UpdateHUDHealth()
