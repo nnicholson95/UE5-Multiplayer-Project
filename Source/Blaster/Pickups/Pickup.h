@@ -48,6 +48,14 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* PickupEffect;
 
+	/*
+	* Handles the bug where if a player is standing on a spawn point when an item spawns it destroys it before the 
+	* OnDestroy delgate can be bound, causing it to destroy without setting a respawn timer
+	*/
+	FTimerHandle BindOverlapTimer;
+	float BindOverlapTime = 0.25f;
+	void BindOverlapTimerFinished();
+
 public:	
 
 
