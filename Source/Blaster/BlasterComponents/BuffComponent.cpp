@@ -57,7 +57,6 @@ void UBuffComponent::ReplenishShield(float ShieldAmount, float ReplenishTime, fl
 	if (bBuffShield)
 	{
 		Character->SetMaxShield(BuffMaxShield);
-		//bShieldIsBuffed = true;
 
 		//Call reset after timer ends
 		Character->GetWorldTimerManager().SetTimer(
@@ -80,21 +79,12 @@ void UBuffComponent::ShieldRampUp(float DeltaTime)
 	const float ShieldThisFrame = ShieldReplenishRate * DeltaTime;
 
 	//If a shield buff is picked up the character should be able to go to a higher max shield but not recharge until they go below initial max shield
-	//TODO check logic -- can i simplify using ResetMaxShield() early?
-/*	if (bShieldIsBuffed)
-	{	*/	
-
-		Character->SetShield(FMath::Clamp(Character->GetShield() + ShieldThisFrame, 0.f, Character->GetMaxShield()));
-		if (Character->GetShield() <= InitialMaxShield)
-		{
-			ResetMaxShield();
-		}
-
-	//} 
-	//else
-	//{
-	//	Character->SetShield(FMath::Clamp(Character->GetShield() + ShieldThisFrame, 0.f, InitialMaxShield));
-	//}
+	Character->SetShield(FMath::Clamp(Character->GetShield() + ShieldThisFrame, 0.f, Character->GetMaxShield()));
+	if (Character->GetShield() <= InitialMaxShield)
+	{
+		Character->GetWorldTimerManager().ClearTimer(ShieldDamageCooldownTimer);
+		ResetMaxShield();
+	}
 
 	Character->UpdateHUDShield();
 	ShieldReplenishAmount -= ShieldThisFrame;
@@ -121,7 +111,6 @@ void UBuffComponent::ResetMaxShield()
 {
 	if (Character == nullptr) return;
 
-	//bShieldIsBuffed = false; //Double sure -- should reset above
 	Character->SetMaxShield(InitialMaxShield);
 	Character->UpdateHUDShield();
 }
