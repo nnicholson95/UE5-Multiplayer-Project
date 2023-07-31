@@ -19,11 +19,3 @@ void AShieldPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	Destroy();
 	
 }
-
-void AShieldPickup::ShieldReplenishCooldownComplete()
-{
-	if (Character)
-	{
-		
-	}
-}

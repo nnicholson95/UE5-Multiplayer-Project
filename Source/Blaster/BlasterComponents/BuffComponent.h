@@ -44,12 +44,12 @@ private:
 
 	FTimerHandle ShieldDamageCooldownTimer;
 	void ResetMaxShield();
-	bool bReplenishingShield = false;
-	float ShieldReplenishRate = 0.f;
-	float ShieldReplenishAmount = 0.f;
 
+	bool bReplenishingShield = false;
+	bool bShieldIsBuffed = false;
 	float InitialMaxShield;
-	float ShieldBuffTime;
+	float ShieldReplenishRate = 5.f;
+	float ShieldReplenishAmount = 100.f;
 
 	/*
 	* Speed Buff

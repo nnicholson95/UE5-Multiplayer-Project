@@ -156,7 +156,7 @@ private:
 	float MaxShield = 100.f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Shield, EditAnywhere, Category = "Player Stats")
-	float Shield = 0.f;
+	float Shield = 100.f;
 
 	UFUNCTION()
 	void OnRep_Shield(float LastShield);
@@ -175,6 +175,16 @@ private:
 	float ElimDelay = 3.f;
 
 	void ElimTimerFinished();
+
+	/*
+	* Shield Recharge
+	*/
+	FTimerHandle ShieldRechargeTimer;
+
+	UPROPERTY(EditDefaultsOnly)
+	float ShieldRechargeDelay = 5.f;
+
+	void ShieldRechargeTimerFinished();
 
 	/*
 	* Dissolve effect

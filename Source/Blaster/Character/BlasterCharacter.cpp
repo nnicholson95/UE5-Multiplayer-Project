@@ -228,6 +228,10 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 {
 	if (bElimmed) return;
 
+	//Interrupt recharge if shot -- this is set to true in the recharge shield fuction in Buff.cpp
+	if (Buff) Buff->bReplenishingShield = false;
+	GetWorldTimerManager().ClearTimer(ShieldRechargeTimer);
+
 	float DamageToHealth = Damage;
 	if (Shield > 0.f)
 	{
@@ -247,9 +251,18 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 
 	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth);
 
+	if (Shield <= Buff->InitialMaxShield) Buff->ResetMaxShield();
+
 	UpdateHUDHealth();
 	UpdateHUDShield();
 	PlayHitReactMontage();
+
+	GetWorldTimerManager().SetTimer(
+		ShieldRechargeTimer,
+		this,
+		&ABlasterCharacter::ShieldRechargeTimerFinished,
+		ShieldRechargeDelay
+	);
 
 	if (Health == 0.f) {
 		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
@@ -389,6 +402,14 @@ void ABlasterCharacter::ElimTimerFinished()
 	if (BlasterGameMode)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
+	}
+}
+
+void ABlasterCharacter::ShieldRechargeTimerFinished()
+{
+	if (Buff && !(GetShield() >= Buff->InitialMaxShield)) 
+	{
+		Buff->ReplenishShield(GetMaxShield(), 5.f, 0.f, 0.f, 0.f); //TODO Magic Numbers
 	}
 }
 
@@ -745,6 +766,7 @@ void ABlasterCharacter::UpdateHUDShield()
 	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (BlasterPlayerController)
 	{
+		if (Shield > GetMaxShield()) Shield = GetMaxShield();
 		BlasterPlayerController->SetHUDShield(Shield, MaxShield);
 	}
 }

@@ -20,8 +20,6 @@ protected:
 		const FHitResult& SweepResult
 	) override;
 
-	virtual void ShieldReplenishCooldownComplete();
-
 private:
 	UPROPERTY(EditAnywhere)
 	float ShieldReplenishAmount = 200.f;
@@ -30,7 +28,7 @@ private:
 	float ShieldReplenishTime = 5.f;
 
 	UPROPERTY(EditAnywhere)
-	float BuffTime = 20.f;
+	float BuffTime = 10.f;
 
 	UPROPERTY(EditAnywhere)
 	float BuffMaxShield = 200.f;
