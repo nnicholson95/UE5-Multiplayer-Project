@@ -5,6 +5,9 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Projectile.h"
 
+/*
+* This is executed only on the server -- safe to call locally without side effects
+*/
 void AProjectileWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);

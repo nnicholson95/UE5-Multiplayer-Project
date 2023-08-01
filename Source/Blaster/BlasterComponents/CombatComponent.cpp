@@ -55,6 +55,8 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
+	//Prevent swapping when doing things like reloading
+	if (CombatState != ECombatState::ECS_Unoccupied) return; //TODO look into changing this functionality to allow swap and stay unloaded
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;
@@ -734,6 +736,8 @@ void UCombatComponent::Fire()
 		FHitResult HitResult;
 		TraceUnderCrosshairs(HitResult);
 		ServerFire(HitResult.ImpactPoint);
+		//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
+		LocalFire(HitTarget);
 
 		if (EquippedWeapon)
 		{
@@ -804,7 +808,22 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 	MultiCastFire(TraceHitTarget);
 }
 
+/*
+* Used to synchronize fire logic for all players
+*/
 void UCombatComponent::MultiCastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	//Check to make sure that we do not call this function twice on local machines, which would double our fire effects
+	if (Character && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalFire(TraceHitTarget);
+}
+
+/*
+* This logic is called from multicastfire as well to synchronize player fire logic
+* 
+* This helper exists to allow for client side playing of these animations -- eliminating ping related delay
+*/
+void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
 	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)

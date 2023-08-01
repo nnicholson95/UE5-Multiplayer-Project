@@ -9,6 +9,9 @@
 #include "WeaponTypes.h"
 #include "DrawDebugHelpers.h"
 
+/*
+* This function also handles a lot of visual and sound cues -- which are safe to call locally
+*/
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
@@ -25,6 +28,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FVector Start = SocketTransform.GetLocation();
 
 		FHitResult FireHit;
+		//Calling this locally can result in different random scatter
 		WeaponTraceHit(Start, HitTarget, FireHit);
 
 		ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(FireHit.GetActor());
@@ -76,6 +80,11 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	}
 }
 
+/*
+* We handle shotgun scatter here, which has randomness to it
+* 
+* TODO shotgun scatter and client side prediction
+*/
 void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
 {
 	FHitResult FireHit;

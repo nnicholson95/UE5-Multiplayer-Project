@@ -256,7 +256,9 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 }
 
 /*
-* Only Called on the Server to handle authority properly
+* Most of this is only cosmetic and can be called locally -- previously only the server called this
+* 
+* Will call locally to make sure client side feels responsive
 */
 void AWeapon::Fire(const FVector& HitTarget)
 {
@@ -282,7 +284,11 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
-	SpendRound();
+	//Spending the round is the only thing that needs to be called on the server 
+	if (HasAuthority())
+	{
+		SpendRound();
+	}
 }
 
 void AWeapon::Dropped()
