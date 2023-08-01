@@ -733,18 +733,53 @@ void UCombatComponent::Fire()
 	if (CanFire())
 	{
 		bCanFire = false;
-		FHitResult HitResult;
-		TraceUnderCrosshairs(HitResult);
-		ServerFire(HitResult.ImpactPoint);
-		//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
-		LocalFire(HitTarget);
 
 		if (EquippedWeapon)
 		{
 			CrosshairShootingFactor = 1.75f;
+
+			switch (EquippedWeapon->FireType)
+			{
+			case EFireType::EFT_Projectile:
+				FireProjectileWeapon();
+				break;
+			case EFireType::EFT_HitScan:
+				FireHitScanWeapon();
+				break;
+			case EFireType::EFT_Shotgun:
+				FireShotgun();
+				break;
+			}
 		}
 		StartFireTimer();
 	}
+}
+
+void UCombatComponent::FireProjectileWeapon()
+{	
+	//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
+	LocalFire(HitTarget);
+	ServerFire(HitTarget);
+}
+
+/*
+* Since this performs the scatter calculation locally and assigns it to Hittarget we then send the correct hit to the server
+* 
+* This is an elegant solution to performing the scatter and replicating it
+*/
+void UCombatComponent::FireHitScanWeapon()
+{
+	if (EquippedWeapon)
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
+		//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
+		LocalFire(HitTarget);
+		ServerFire(HitTarget);
+	}
+}
+
+void UCombatComponent::FireShotgun()
+{
 }
 
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
