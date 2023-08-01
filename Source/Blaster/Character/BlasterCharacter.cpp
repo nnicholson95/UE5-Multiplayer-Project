@@ -293,17 +293,18 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 */
 void ABlasterCharacter::Elim()
 {
-	if (Combat && Combat->EquippedWeapon)
+	if (Combat)
 	{
-		if (Combat->EquippedWeapon->bDestroyWeapon)
+		if (Combat->EquippedWeapon)
 		{
-			Combat->EquippedWeapon->Destroy();
+			DropOrDestroyWeapon(Combat->EquippedWeapon);
 		}
-		else
+		if (Combat->SecondaryWeapon)
 		{
-			Combat->EquippedWeapon->Dropped();
+			DropOrDestroyWeapon(Combat->SecondaryWeapon);
 		}
 	}
+
 	MulticastElim();
 	//set the timer for respawn
 	GetWorldTimerManager().SetTimer(
@@ -312,25 +313,6 @@ void ABlasterCharacter::Elim()
 		&ABlasterCharacter::ElimTimerFinished,
 		ElimDelay
 	);
-}
-
-void ABlasterCharacter::Destroyed()
-{
-	Super::Destroyed();
-
-	if (ElimBotComponent)
-	{
-		ElimBotComponent->DestroyComponent();
-	}
-
-	//Check to see blaster game mode valid and see if match is in progress
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
-	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
-	//If not game inProgress state delete weapon otherwise drop it to ground
-	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
-	{
-		Combat->EquippedWeapon->Destroy();
-	}
 }
 
 /*
@@ -387,10 +369,10 @@ void ABlasterCharacter::MulticastElim_Implementation()
 			GetActorLocation()
 		);
 	}
-	bool bHideSniperScope = IsLocallyControlled() && 
+	bool bHideSniperScope = IsLocallyControlled() &&
 		Combat &&
-		Combat->bAiming && 
-		Combat->EquippedWeapon && 
+		Combat->bAiming &&
+		Combat->EquippedWeapon &&
 		Combat->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;
 	if (bHideSniperScope)
 	{
@@ -399,8 +381,8 @@ void ABlasterCharacter::MulticastElim_Implementation()
 }
 
 /*
-* Request Respawn 
-* 
+* Request Respawn
+*
 * Called from the server via Elim()
 */
 void ABlasterCharacter::ElimTimerFinished()
@@ -409,6 +391,38 @@ void ABlasterCharacter::ElimTimerFinished()
 	if (BlasterGameMode)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
+	}
+}
+
+void ABlasterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
+{
+	if (Weapon == nullptr) return;
+	if (Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->Dropped();
+	}
+}
+
+void ABlasterCharacter::Destroyed()
+{
+	Super::Destroyed();
+
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
+	}
+
+	//Check to see blaster game mode valid and see if match is in progress
+	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
+	//If not game inProgress state delete weapon otherwise drop it to ground
+	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
+	{
+		Combat->EquippedWeapon->Destroy();
 	}
 }
 
