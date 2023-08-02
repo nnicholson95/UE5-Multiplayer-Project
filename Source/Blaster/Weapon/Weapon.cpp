@@ -74,7 +74,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
-	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool BFromSweep, const FHitResult& SweepResult)
@@ -117,19 +116,53 @@ void AWeapon::SetHUDAmmo()
 /*
 * Responsible for changing ammo count per weapon as well as updating the HUD for weapon owner
 * 
-* calls OnRep_Ammo because ammo is a replicated variable
 */
 void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
+
+	if (HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else 
+	{
+		++Sequence;
+	}
 }
 
 /*
-* Responsible for client things related to ammo
+* Client side prediction / server reconciliation for ammo uses sequence to know how many shots were fired locally
+* 
+* We get the authoritative value and then reconcile accordingly for how many shots fired locally
 */
-void AWeapon::OnRep_Ammo()
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
+	if (HasAuthority())	return;
+	Ammo = ServerAmmo; //Authoritative value
+	--Sequence;
+	//We know that we have spent this many rounds 
+	Ammo -= Sequence;
+	SetHUDAmmo();
+}
+
+/*
+* Change value of Ammo carried
+*
+*/
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
+	//This is to update the HUE for the Server
+	SetHUDAmmo();
+	ClientAddAmmo(AmmoToAdd);
+}
+
+void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if (HasAuthority())	return;
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
 	if (BlasterOwnerCharacter && BlasterOwnerCharacter->GetCombat() && IsFull())
 	{
@@ -283,11 +316,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
-	//Spending the round is the only thing that needs to be called on the server 
-	if (HasAuthority())
-	{
-		SpendRound();
-	}
+	SpendRound();
 }
 
 void AWeapon::Dropped()
@@ -298,18 +327,6 @@ void AWeapon::Dropped()
 	SetOwner(nullptr);
 	BlasterOwnerCharacter = nullptr;
 	BlasterOwnerController = nullptr;
-}
-
-/*
-* Change value of Ammo carried
-* 
-* Ammo is replicated and updated on the HUD so this works well for clients
-*/
-void AWeapon::AddAmmo(int32 AmmoToAdd)
-{
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
-	//This is to update the HUE for the Server
-	SetHUDAmmo();
 }
 
 bool AWeapon::IsEmpty()
