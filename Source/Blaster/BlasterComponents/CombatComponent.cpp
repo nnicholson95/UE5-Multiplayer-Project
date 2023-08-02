@@ -14,6 +14,7 @@
 #include "Sound/SoundCue.h"
 #include "Blaster/Character/BlasterAnimInstance.h"
 #include "Blaster/Weapon/Projectile.h"
+#include "Blaster/Weapon/Shotgun.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -757,9 +758,13 @@ void UCombatComponent::Fire()
 
 void UCombatComponent::FireProjectileWeapon()
 {	
-	//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
-	LocalFire(HitTarget);
-	ServerFire(HitTarget);
+	if (EquippedWeapon && Character)
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
+		//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
+		if (!Character->HasAuthority()) LocalFire(HitTarget); //Authority negation makes sure server does not call this and do things twice
+		ServerFire(HitTarget);
+	}
 }
 
 /*
@@ -769,17 +774,25 @@ void UCombatComponent::FireProjectileWeapon()
 */
 void UCombatComponent::FireHitScanWeapon()
 {
-	if (EquippedWeapon)
+	if (EquippedWeapon && Character)
 	{
 		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
 		//Call local fire to perform multicastfire logic locally -- thus eliminating ping issues
-		LocalFire(HitTarget);
+		if (!Character->HasAuthority()) LocalFire(HitTarget); //Authority negation makes sure server does not call this and do things twice
 		ServerFire(HitTarget);
 	}
 }
 
 void UCombatComponent::FireShotgun()
 {
+	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+	if (Shotgun && Character)
+	{
+		TArray<FVector_NetQuantize> HitTargets;
+		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets);
+		if (!Character->HasAuthority()) ShotgunLocalFire(HitTargets); //Authority negation makes sure server does not call this and do things twice
+		ServerShotgunFire(HitTargets);
+	}
 }
 
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
@@ -853,6 +866,18 @@ void UCombatComponent::MultiCastFire_Implementation(const FVector_NetQuantize& T
 	LocalFire(TraceHitTarget);
 }
 
+void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	MulticastShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::MulticastShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	//Check to make sure that we do not call this function twice on local machines, which would double our fire effects
+	if (Character && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	ShotgunLocalFire(TraceHitTargets);
+}
+
 /*
 * This logic is called from multicastfire as well to synchronize player fire logic
 * 
@@ -861,18 +886,24 @@ void UCombatComponent::MultiCastFire_Implementation(const FVector_NetQuantize& T
 void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
-	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
-	{
-		Character->PlayFireMontage(bAiming);
-		EquippedWeapon->Fire(TraceHitTarget);
-		//Reset stat even if we never make it to the anim notify at the end of the reload montage
-		CombatState = ECombatState::ECS_Unoccupied;
-		return;
-	}
+
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
+	}
+}
+
+void UCombatComponent::ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+	if (Shotgun == nullptr || Character == nullptr) return;
+	if (CombatState == ECombatState::ECS_Reloading || CombatState == ECombatState::ECS_Unoccupied)
+	{
+		Character->PlayFireMontage(bAiming);
+		Shotgun->FireShotgun(TraceHitTargets);
+		//Reset stat even if we never make it to the anim notify at the end of the reload montage
+		CombatState = ECombatState::ECS_Unoccupied;
 	}
 }
 
