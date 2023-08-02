@@ -101,13 +101,16 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 */
 void AWeapon::SetHUDAmmo()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Top of SetHUDAmmo in weapon.cpp"));
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
 
 	if (BlasterOwnerCharacter)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Valid OwnerCharacter in weapon.cpp"));
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
 		if (BlasterOwnerController)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("In SetHUDAmmo in weapon.cpp"));
 			BlasterOwnerController->SetHUDWeaponAmmo(Ammo);
 		}
 	}
@@ -115,7 +118,6 @@ void AWeapon::SetHUDAmmo()
 
 /*
 * Responsible for changing ammo count per weapon as well as updating the HUD for weapon owner
-* 
 */
 void AWeapon::SpendRound()
 {
@@ -126,7 +128,7 @@ void AWeapon::SpendRound()
 	{
 		ClientUpdateAmmo(Ammo);
 	}
-	else 
+	else if (BlasterOwnerCharacter && BlasterOwnerCharacter->IsLocallyControlled())
 	{
 		++Sequence;
 	}

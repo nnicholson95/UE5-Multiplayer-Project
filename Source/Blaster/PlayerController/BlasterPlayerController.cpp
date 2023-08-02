@@ -263,11 +263,14 @@ void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 		BlasterHUD->CharacterOverlay->WeaponAmmoAmount;
 	if (bHUDValid)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Valid HUD in SetHUDWeaponAmmo"));
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		UE_LOG(LogTemp, Warning, TEXT("SetHUDWeaponAmmo Value: %d"), Ammo);
 		BlasterHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
 	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Should Poll Init -- SetHUDWeaponAmmo"));
 		bInitializeWeaponAmmo = true;
 		HUDWeaponAmmo = Ammo;
 	}
@@ -282,11 +285,14 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 		BlasterHUD->CharacterOverlay->CarriedAmmoAmount;
 	if (bHUDValid)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Valid HUD in SetHUDCarriedAmmo"));
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		UE_LOG(LogTemp, Warning, TEXT("SetHUDCarriedAmmo Value: %d"), Ammo);
 		BlasterHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
 	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Should Poll Init -- SetHUDCarriedAmmo"));
 		bInitializeCarriedAmmo = true;
 		HUDCarriedAmmo = Ammo;
 	}
@@ -374,6 +380,11 @@ void ABlasterPlayerController::SetHUDTime()
 
 	if (HasAuthority())
 	{
+		if (BlasterGameMode == nullptr)
+		{
+			BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+			LevelStartingTime = BlasterGameMode->LevelStartingTime;
+		}
 		BlasterGameMode = BlasterGameMode == nullptr ? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 		if (BlasterGameMode)
 		{

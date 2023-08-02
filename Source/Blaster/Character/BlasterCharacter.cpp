@@ -438,11 +438,6 @@ void ABlasterCharacter::ShieldRechargeTimerFinished()
 void ABlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	SpawnDefaultWeapon();
-	
-	UpdateHUDAmmo();
-	UpdateHUDHealth();
-	UpdateHUDShield();
 
 	if (HasAuthority())
 	{
@@ -516,6 +511,10 @@ void ABlasterCharacter::EquipButtonPressed()
 		if (HasAuthority()) 
 		{
 			Combat->EquipWeapon(OverlappingWeapon);
+			if (Combat->ShouldSwapWeapons())
+			{
+				Combat->SwapWeapons();
+			}
 		}
 		else 
 		{
@@ -803,9 +802,11 @@ void ABlasterCharacter::UpdateHUDShield()
 
 void ABlasterCharacter::UpdateHUDAmmo()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Top of UpdateHUDAmmo in BlasterCharacter.cpp"));
 	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (BlasterPlayerController && Combat && Combat->EquippedWeapon)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Valid playercontroller && combat && equipped weapon in UpdateHUDAmmo in BlasterCharacter.cpp"));
 		BlasterPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
 		BlasterPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
 	}
@@ -840,6 +841,17 @@ void ABlasterCharacter::PollInit()
 		{
 			BlasterPlayerState->AddToScore(0.f);
 			BlasterPlayerState->AddToDefeats(0);
+		}
+	}
+	if (BlasterPlayerController == nullptr)
+	{
+		BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+		if (BlasterPlayerController)
+		{
+			SpawnDefaultWeapon();
+			UpdateHUDAmmo();
+			UpdateHUDHealth();
+			UpdateHUDShield();
 		}
 	}
 }
