@@ -204,9 +204,14 @@ void UCombatComponent::Reload()
 {
 	//Check carried ammo because if its zero no need to waste bandwidth
 	//Check that we are unnocuppied to avoid spamming server with rpcs -- no need to reload if we are performing action
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull())
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull() && !bLocallyReloading)
 	{
 		ServerReload();
+		//If we call this locally we have to make sure to not call it twice
+		//Check local control -- In:
+		//OnRep_CombatState(), ServerReload()
+		HandleReload();
+		bLocallyReloading = true;
 	}
 }
 
@@ -218,14 +223,19 @@ void UCombatComponent::Reload()
 * using boolean in BlasterAnimInstance called bUseFABRIK
 * 
 * Since Server RPCs only execute on server regardless of who invokes it we
-* create an enum to keep track of combat state
+* create an enum and assigned it to a replicated variable. This way on a change
+* to combat state we automatically call OnRep_CombatState()
 */
 void UCombatComponent::ServerReload_Implementation()
 {
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
 
 	CombatState = ECombatState::ECS_Reloading;
-	HandleReload();
+	/*
+	* This is a server RPC on the server so we do not want to call reload if we
+	* are on the server and locally controlled (listen server character)
+	*/
+	if (!Character->IsLocallyControlled()) HandleReload();
 }
 
 /*
@@ -296,6 +306,7 @@ void UCombatComponent::JumpToShotgunEnd()
 void UCombatComponent::FinishReloading()
 {
 	if (Character == nullptr) return;
+	bLocallyReloading = false;
 	if (Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
@@ -319,7 +330,8 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
-		HandleReload();
+		//Again negate local character so we do not double call reload logic
+		if (Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
 		if (bFireButtonPressed)
@@ -340,11 +352,14 @@ void UCombatComponent::OnRep_CombatState()
 }
 
 /*
-* Handles reload logic that plays on BOTH client and server to avoid copy/paste
+* Helper function to handle our logic for reloading 
 */
 void UCombatComponent::HandleReload()
 {
-	Character->PlayReloadMontage();
+	if (Character)
+	{
+		Character->PlayReloadMontage();
+	}
 }
 
 /*
@@ -691,6 +706,11 @@ void UCombatComponent::FireTimerFinsihed()
 	ReloadEmptyWeapon();
 }
 
+/*
+* Locally called function to set the aiming logic of the player character
+* 
+* ServerSetAiming is a server RPC to synchronize this behavior across machines
+*/
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
@@ -704,6 +724,8 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 	{
 		Character->ShowSniperScopeWidget(bIsAiming);
 	}
+	//Used for client side prediction in OnRep_Aiming()
+	if (Character->IsLocallyControlled()) bAimButtonPressed = bIsAiming;
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
@@ -712,6 +734,22 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 	if (Character)
 	{
 		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+	}
+}
+
+/*
+* RepNotify for bAiming -- Called automatically when bAiming changes
+* 
+* We use this in a different way because our Server RPC is already synchronizing aiming and we want our clients to aim predictably
+* in higher lag situations.
+* Our local boolean bAimButtonPressed is set in SetAiming and we use that here (On locally controlled players only) to allow our 
+* clients to predict aiming before our server reconciles their state.
+*/
+void UCombatComponent::OnRep_Aiming()
+{
+	if (Character && Character->IsLocallyControlled())
+	{
+		bAiming = bAimButtonPressed;
 	}
 }
 
@@ -914,6 +952,8 @@ void UCombatComponent::ShotgunLocalFire(const TArray<FVector_NetQuantize>& Trace
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
+	//Local reload variable so we can enable/disable FABRIK client side
+	if (bLocallyReloading) return false;
 	//Check Reloading While holding shotgun to allow reload cancel
 	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;

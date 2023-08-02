@@ -285,14 +285,11 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 		BlasterHUD->CharacterOverlay->CarriedAmmoAmount;
 	if (bHUDValid)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Valid HUD in SetHUDCarriedAmmo"));
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
-		UE_LOG(LogTemp, Warning, TEXT("SetHUDCarriedAmmo Value: %d"), Ammo);
 		BlasterHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Should Poll Init -- SetHUDCarriedAmmo"));
 		bInitializeCarriedAmmo = true;
 		HUDCarriedAmmo = Ammo;
 	}

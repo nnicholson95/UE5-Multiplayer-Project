@@ -77,6 +77,13 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	//As long as we are not reloading we should use FABRIK to align left hand
 	bUseFABRIK = BlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
+	//Client side local reload logic to diable FABRIK
+	if (BlasterCharacter->IsLocallyControlled() && BlasterCharacter->GetCombatState() != ECombatState::ECS_ThrowingGrenade)
+	{
+		//Disable FABRIK if character is locally reloading, this way client predicted reloading looks good
+		//else FABRIK should stay enabled
+		bUseFABRIK = !BlasterCharacter->IsLocallyReloading();
+	}
 	//Disable aim offsets to ensure reloading looks good
 	bUseAimOffsetts = BlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied && !BlasterCharacter->GetDisableGameplay();
 	bTransformRightHand = BlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied && !BlasterCharacter->GetDisableGameplay();

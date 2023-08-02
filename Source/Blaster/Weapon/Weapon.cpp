@@ -101,16 +101,13 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 */
 void AWeapon::SetHUDAmmo()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Top of SetHUDAmmo in weapon.cpp"));
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
 
 	if (BlasterOwnerCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Valid OwnerCharacter in weapon.cpp"));
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
 		if (BlasterOwnerController)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("In SetHUDAmmo in weapon.cpp"));
 			BlasterOwnerController->SetHUDWeaponAmmo(Ammo);
 		}
 	}

@@ -17,5 +17,4 @@ void AShieldPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	}
 
 	Destroy();
-	
 }
