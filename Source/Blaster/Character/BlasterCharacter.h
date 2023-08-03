@@ -76,6 +76,13 @@ protected:
 	void PollInit();
 	void RotateInPlace(float DeltaTime);
 
+	/*
+	* Hitboxes used for server-side rewind
+	*/
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* headbox;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* CameraBoom;
