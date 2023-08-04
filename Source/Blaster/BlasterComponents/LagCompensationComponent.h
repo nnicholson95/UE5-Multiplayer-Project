@@ -124,7 +124,7 @@ protected:
 	);
 
 	FShotgunServerSideRewindResult ShotgunConfirmHit(
-		const TArray<FFramePackage>& FramPackages,
+		const TArray<FFramePackage>& FramePackages,
 		const FVector_NetQuantize& TraceStart,
 		const TArray<FVector_NetQuantize>& HitLocations
 	);
