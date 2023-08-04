@@ -47,6 +47,10 @@ public:
 
 	void SpawnDefaultWeapon();
 
+
+	UPROPERTY()
+	TMap<FName, class UBoxComponent*> HitCollisionBoxes;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -150,11 +154,18 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
+	/*
+	* BlasterComponents
+	*/
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (allowPrivateAccess = "true"))
 	class UCombatComponent* Combat;
 
 	UPROPERTY(VisibleAnywhere)
 	class UBuffComponent* Buff;
+
+	UPROPERTY(VisibleAnywhere)
+	class ULagCompensationComponent* LagCompensation;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
