@@ -34,6 +34,48 @@ void ULagCompensationComponent::SaveFramePackage(FFramePackage& Package)
 	}
 }
 
+/*
+* Interpolation gets a current and target value
+*
+* The idea is to first take the distance between the two values
+* Using this distance move the value by DeltaMove, = Distance * FMath::Clamp(DeltaTime * InterpSpeed, 0, 1)
+* The clamp is a fraction value between 0 and 1 determined by deltatime * interpspeed to give us a frame independent movement
+* Since distance gets smaller the movement is smooth
+*/
+FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime)
+{
+	//Values for interpolation
+	const float Distance = YoungerFrame.Time - OlderFrame.Time;
+	const float InterpFraction = FMath::Clamp((HitTime - OlderFrame.Time) / Distance, 0.f, 1.f);
+
+	FFramePackage InterpFramePackage;
+	InterpFramePackage.Time = HitTime;
+
+	//Loop over every HitBoxInfo
+	for (auto& YoungerPair : YoungerFrame.HitBoxInfo)
+	{
+		//Get the name of the pair this iteration
+		const FName& BoxInfoName = YoungerPair.Key;
+
+		//Get the references to the olderbox and younger hitbox with the above name
+		const FBoxInformation& OlderBox = OlderFrame.HitBoxInfo[BoxInfoName];
+		const FBoxInformation& YoungerBox = YoungerFrame.HitBoxInfo[BoxInfoName];
+
+		//Local box info
+		FBoxInformation InterpBoxInfo;
+
+		//Fill in the local box with interpolated values between the older and younger box
+		InterpBoxInfo.Location = FMath::VInterpTo(OlderBox.Location, YoungerBox.Location, 1.f, InterpFraction);
+		InterpBoxInfo.Rotation = FMath::RInterpTo(OlderBox.Rotation, YoungerBox.Rotation, 1.f, InterpFraction);
+		InterpBoxInfo.BoxExtent = YoungerBox.BoxExtent;
+
+		//Fill out interpolated values for each hitbox
+		InterpFramePackage.HitBoxInfo.Add(BoxInfoName, InterpBoxInfo);
+	}
+
+	return InterpFramePackage;
+}
+
 void ULagCompensationComponent::ShowFramePackage(const FFramePackage& Package, const FColor Color)
 {
 	for (auto& BoxInfo : Package.HitBoxInfo)
