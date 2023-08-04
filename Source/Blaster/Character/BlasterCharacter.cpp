@@ -453,7 +453,7 @@ void ABlasterCharacter::MulticastElim_Implementation()
 	}
 	//Disable capsule collision and enable ragdoll
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly); //TODO check for query and physics
 	GetMesh()->SetSimulatePhysics(true);
 
 	//Spawn Elim Bot

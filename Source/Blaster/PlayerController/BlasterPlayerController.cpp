@@ -450,8 +450,10 @@ void ABlasterPlayerController::ServerRequestServerTime_Implementation(float Time
 void ABlasterPlayerController::ClientReportServerTime_Implementation(float TimeOFClientRequest, float TimeServerRecievedClientRequest)
 {
 	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOFClientRequest;
+	//The Single trip time is updated here because it is used for server side rewind to determine what time we want to look at
+	SingleTripTime = 0.5f * RoundTripTime;
 	//This is an approximation that will bring the timer as close as possible because half of round trip time is assumed to be Server response time
-	float CurrentServerTime = TimeServerRecievedClientRequest + (0.5f * RoundTripTime);
+	float CurrentServerTime = TimeServerRecievedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }
 
