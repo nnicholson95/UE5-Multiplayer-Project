@@ -81,6 +81,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor Color);
 	
+	/*
+	* HitScan
+	*/
 	FServerSideRewindResult ServerSideRewind(
 		class ABlasterCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
@@ -88,6 +91,19 @@ public:
 		float HitTime
 	);
 
+	/*
+	* Projectile
+	*/
+	FServerSideRewindResult ProjectileServerSideRewind(
+		class ABlasterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
+
+	/*
+	* Shotgun
+	*/
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(
 		const TArray<ABlasterCharacter*>& HitCharacters,
 		const FVector_NetQuantize& TraceStart,
@@ -118,17 +134,32 @@ protected:
 	void SaveFramePackage();
 	void SaveFramePackage(FFramePackage& Package);
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
+	void CacheBoxPositions(ABlasterCharacter* HitCharacter, FFramePackage& OutFramePackage);
+	void MoveBoxes(ABlasterCharacter* HitCharacter, const FFramePackage& Package);
+	void ResetHitBoxes(ABlasterCharacter* HitCharacter, const FFramePackage& Package);
+	void EnableCharacterMeshCollision(ABlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisonEnabled);
+	FFramePackage GetFrameToCheck(ABlasterCharacter* HitCharacter, float HitTime);
+
+	/*
+	* HitScan
+	*/
 	FServerSideRewindResult ConfirmHit(
 		const FFramePackage& Package,
 		ABlasterCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation
 	);
-	void CacheBoxPositions(ABlasterCharacter* HitCharacter, FFramePackage& OutFramePackage);
-	void MoveBoxes(ABlasterCharacter* HitCharacter, const FFramePackage& Package);
-	void ResetHitBoxes(ABlasterCharacter* HitCharacter, const FFramePackage& Package);
-	void EnableCharacterMeshCollision(ABlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisonEnabled);
-	FFramePackage GetFrameToCheck(ABlasterCharacter* HitCharacter, float HitTime);
+
+	/*
+	* Projectile
+	*/
+	FServerSideRewindResult ProjectileConfirmHit(
+		const FFramePackage& Package,
+		class ABlasterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
 
 	/*
 	* Shotgun
