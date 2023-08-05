@@ -55,10 +55,17 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 			*
 			* Our round trip RPCs below are better for accuracy but more expensive
 			*/
+			UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing() * 4: %d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold)
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true); //Server RPC to tell ping status
+			}
+			//Ping is not too high so false
+			else 
+			{
+				ServerReportPingStatus(false);
 			}
 			HighPingRunningTime = 0.f;
 		}
@@ -74,6 +81,16 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 			StopHighPingWarning();
 		}
 	}
+}
+
+/*
+* Server RPC to describe PingStatus
+* 
+* bHighPing true if ping is too high for server side rewind, false otherwise
+*/
+void ABlasterPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void ABlasterPlayerController::HighPingWarning()
