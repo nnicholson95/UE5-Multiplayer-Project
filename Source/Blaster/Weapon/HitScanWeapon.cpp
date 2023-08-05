@@ -38,8 +38,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(FireHit.GetActor());
 		if (BlasterCharacter && InstigatorController)
 		{
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
 			//No need for server side rewind on the server
-			if (HasAuthority() && !bUseServerSideRewind)
+			if (HasAuthority() && bCauseAuthDamage)
 			{
 				//Server Authority for Damage application
 				UGameplayStatics::ApplyDamage(
