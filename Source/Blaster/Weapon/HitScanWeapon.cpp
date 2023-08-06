@@ -29,7 +29,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = SocketTransform.GetLocation();
 
-		FHitResult FireHit;
+		FHitResult FireHit; //set in WeaponHitResult line trace
 		//Calling this locally can result in different random scatter 
 		//Trace form the barrel to hit location
 		WeaponTraceHit(Start, HitTarget, FireHit);
@@ -42,10 +42,12 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			//No need for server side rewind on the server
 			if (HasAuthority() && bCauseAuthDamage)
 			{
+				const float DamageToCause = FireHit.BoneName.ToString() == FString("head") ? HeadShotDamage : Damage;
+				
 				//Server Authority for Damage application
 				UGameplayStatics::ApplyDamage(
 					BlasterCharacter,
-					Damage,
+					DamageToCause,
 					InstigatorController,
 					this,
 					UDamageType::StaticClass()
@@ -129,6 +131,10 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		if (OutHit.bBlockingHit) 
 		{
 			BeamEnd = OutHit.ImpactPoint;
+		}
+		else
+		{
+			OutHit.ImpactPoint = End;
 		}
 
 		//DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);

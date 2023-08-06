@@ -46,6 +46,7 @@ void ABlasterHUD::AddElimAnnouncement(FString Attacker, FString Victim)
 			ElimAnnouncementWidget->SetElimAnnouncementText(Attacker, Victim);
 			ElimAnnouncementWidget->AddToViewport();
 
+			//loop over msg and move them all up by the width of the text box
 			for (UElimAnnouncement* Msg : ElimMessages)
 			{
 				if (Msg && Msg->AnnouncementBox)

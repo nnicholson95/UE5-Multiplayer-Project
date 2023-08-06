@@ -24,6 +24,7 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 
 		//In the case we hit multiple characters we map the number of times hit each
 		TMap<ABlasterCharacter*, uint32> HitMap;
+		TMap<ABlasterCharacter*, uint32> HeadShotHitMap;
 		for (FVector_NetQuantize HitTarget : HitTargets)
 		{
 			FHitResult FireHit;
@@ -32,15 +33,21 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 			ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(FireHit.GetActor());
 			if (BlasterCharacter)
 			{
-				//Check to see if out hitmap contains the hit character and increment their hits
-				if (HitMap.Contains(BlasterCharacter))
+				const bool bHeadShot = FireHit.BoneName.ToString() == FString("head");
+
+				if (bHeadShot)
 				{
-					HitMap[BlasterCharacter]++;
+					//Check to see if out hitmap contains the hit character and increment their hits
+					if (HeadShotHitMap.Contains(BlasterCharacter)) HeadShotHitMap[BlasterCharacter]++;
+					//If the hit character does not exist in the map then add them and set their hits to 1
+					else HeadShotHitMap.Emplace(BlasterCharacter, 1);
 				}
-				//If the hit character does not exist in the map then add them and set their hits to 1
 				else
 				{
-					HitMap.Emplace(BlasterCharacter, 1);
+					//Check to see if out hitmap contains the hit character and increment their hits
+					if (HitMap.Contains(BlasterCharacter)) HitMap[BlasterCharacter]++;
+					//If the hit character does not exist in the map then add them and set their hits to 1
+					else HitMap.Emplace(BlasterCharacter, 1);
 				}
 
 				if (ImpactParticles)
@@ -66,29 +73,55 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 		}
 		TArray<ABlasterCharacter*> HitCharacters;
 
+		// Maps character hit to total damage
+		TMap<ABlasterCharacter*, float> DamageMap;
+
+		//Calculate body shot damage by multiplying times hit * damage - store in DamageMap
 		for (auto HitPair : HitMap)
 		{
-			if (InstigatorController)
+			if (HitPair.Key)
 			{
-				if (HitPair.Key && InstigatorController)
-				{
-					bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
-					if (HasAuthority() && bCauseAuthDamage)
-					{
-						//Server Authority for Damage application
-						UGameplayStatics::ApplyDamage(
-							HitPair.Key, //Character that was hit
-							Damage * HitPair.Value, //Multiply damage by number of times hit
-							InstigatorController,
-							this,
-							UDamageType::StaticClass()
-						);
-					}
+				DamageMap.Emplace(HitPair.Key, HitPair.Value * Damage);
 
-					HitCharacters.Add(HitPair.Key);
+				HitCharacters.AddUnique(HitPair.Key);
+			}
+		}
+
+		//Calculate headshot damage by multiplying * headshotdamage - store in DamageMap
+		for (auto HeadShotHitPair : HeadShotHitMap)
+		{
+			if (HeadShotHitPair.Key)
+			{
+				//Check to see if out hitmap contains the hit character and increment their hits
+				if (DamageMap.Contains(HeadShotHitPair.Key)) HeadShotHitMap[HeadShotHitPair.Key] += HeadShotHitPair.Value * HeadShotDamage;
+				//If the hit character does not exist in the map then add them and set their hits to 1
+				else DamageMap.Emplace(HeadShotHitPair.Key, HeadShotHitPair.Value * HeadShotDamage);
+
+				HitCharacters.AddUnique(HeadShotHitPair.Key);
+			}
+		}
+
+		// Loop through DamageMap to get total damage for each character
+		for (auto DamagePair : DamageMap)
+		{
+			if (DamagePair.Key && InstigatorController)
+			{
+				bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+				if (HasAuthority() && bCauseAuthDamage)
+				{
+					//Server Authority for Damage application
+					UGameplayStatics::ApplyDamage(
+						DamagePair.Key, //Character that was hit
+						DamagePair.Value, //Damage calculated in the two for loops above
+						InstigatorController,
+						this,
+						UDamageType::StaticClass()
+					);
 				}
 			}
 		}
+
+
 
 		if (!HasAuthority() && bUseServerSideRewind)
 		{
