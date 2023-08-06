@@ -203,6 +203,13 @@ void ABlasterCharacter::RotateInPlace(float DeltaTime)
 
 		return;
 	}
+	//Not holding the flag so make sure this is set back
+	if (Combat && Combat->EquippedWeapon) 
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+	}
+
 	if (bDisableGameplay) 
 	{
 		bUseControllerRotationYaw = false;

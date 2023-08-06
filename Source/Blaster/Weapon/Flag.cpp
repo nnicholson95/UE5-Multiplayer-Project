@@ -31,7 +31,7 @@ void AFlag::ResetFlag()
 	{
 		FlagBearer->SetHoldingTheFlag(false);
 		FlagBearer->SetOverlappingWeapon(nullptr);
-		FlagBearer->UnCrouch();
+		//FlagBearer->UnCrouch();
 	}
 
 	if (!HasAuthority()) return;

@@ -45,6 +45,9 @@ public:
 	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionComplete;
 	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionComplete;
 
+	int32 DesiredNumPublicConnections{};
+	FString DesiredMatchType{};
+
 protected:
 	/*
 	* Internal Callbacks for the delegates we'll add to the Online SessionInterface Delegate list
