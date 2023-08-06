@@ -9,7 +9,7 @@ UCLASS()
 class BLASTER_API ATeamPlayerStart : public APlayerStart
 {
 	GENERATED_BODY()
-
+public:
 	UPROPERTY(EditAnywhere)
 	ETeam Team;
 };
