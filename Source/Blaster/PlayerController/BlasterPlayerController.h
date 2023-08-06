@@ -150,6 +150,7 @@ private:
 	bool bInitializeCarriedAmmo = false;
 	float HUDWeaponAmmo;
 	bool bInitializeWeaponAmmo = false;
+	bool bInitializeTeamScores = false;
 
 	float HighPingRunningTime = 0.f;
 	float PingAnimationRunningTime = 0.f;

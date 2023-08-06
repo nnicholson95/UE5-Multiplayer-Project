@@ -68,6 +68,10 @@ void ABlasterPlayerController::InitTeamScores()
 		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(Zero));
 		BlasterHUD->CharacterOverlay->ScoreSpacerText->SetText(FText::FromString(Spacer));
 	}
+	else
+	{
+		bInitializeTeamScores = true;
+	}
 }
 
 void ABlasterPlayerController::SetHUDRedTeamScore(int32 RedScore)
@@ -586,6 +590,7 @@ void ABlasterPlayerController::PollInit()
 				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
 				if (bInitializeCarriedAmmo) SetHUDCarriedAmmo(HUDCarriedAmmo);
 				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
+				if (bInitializeTeamScores) InitTeamScores();
 
 				ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(GetPawn());
 				if (BlasterCharacter && BlasterCharacter->GetCombat())

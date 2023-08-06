@@ -44,10 +44,10 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	if (WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
 	{
-		Character->Crouch();
+		//Character->Crouch();
 		bHoldingTheFlag = true;
-		AttachFlagToLeftHand(WeaponToEquip);
 		WeaponToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
+		AttachFlagToLeftHand(WeaponToEquip);
 		WeaponToEquip->SetOwner(Character);
 	}
 	else
@@ -1046,6 +1046,6 @@ void UCombatComponent::OnRep_HoldingTheFlag()
 {
 	if (bHoldingTheFlag && Character && Character->IsLocallyControlled())
 	{
-		Character->Crouch();
+		//Character->Crouch();
 	}
 }

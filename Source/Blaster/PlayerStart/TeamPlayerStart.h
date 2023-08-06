@@ -1,0 +1,15 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/PlayerStart.h"
+#include "Blaster/BlasterTypes/Team.h"
+#include "TeamPlayerStart.generated.h"
+
+UCLASS()
+class BLASTER_API ATeamPlayerStart : public APlayerStart
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	ETeam Team;
+};

@@ -27,6 +27,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Blaster/GameState/BlasterGameState.h"
+#include "Blaster/Weapon/Flag.h"
 
 
 // Sets default values
@@ -344,6 +345,7 @@ void ABlasterCharacter::PlayHitReactMontage()
 
 void ABlasterCharacter::GrenadeButtonPressed()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat)
 	{
 		Combat->ThrowGrenade();
@@ -552,6 +554,7 @@ void ABlasterCharacter::ServerLeaveGame_Implementation()
 
 void ABlasterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
 {
+	UE_LOG(LogTemp, Warning, TEXT("In Drop or destroy weapon"));
 	if (Weapon == nullptr) return;
 	if (Weapon->bDestroyWeapon)
 	{
@@ -559,6 +562,7 @@ void ABlasterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
 	}
 	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Should Drop"));
 		Weapon->Dropped();
 	}
 }
@@ -666,6 +670,7 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis("Turn", this, &ABlasterCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ABlasterCharacter::LookUp);
 
+	//Key Mappings
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ABlasterCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ABlasterCharacter::AimButtonPressed);
@@ -713,6 +718,11 @@ void ABlasterCharacter::EquipButtonPressed()
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
+		if (Combat->bHoldingTheFlag && Combat->TheFlag)
+		{
+			Combat->TheFlag->Dropped();
+			return;
+		}
 		if(Combat->CombatState == ECombatState::ECS_Unoccupied) ServerEquipButtonPressed();
 		bool bSwap = Combat->ShouldSwapWeapons() &&
 			!HasAuthority() &&
@@ -745,6 +755,7 @@ void ABlasterCharacter::ServerEquipButtonPressed_Implementation()
 
 void ABlasterCharacter::CrouchButtonPressed()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
@@ -758,6 +769,7 @@ void ABlasterCharacter::CrouchButtonPressed()
 
 void ABlasterCharacter::ReloadButtonPressed()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat)
 	{
 		Combat->Reload();
@@ -766,6 +778,7 @@ void ABlasterCharacter::ReloadButtonPressed()
 
 void ABlasterCharacter::AimButtonPressed()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
@@ -775,6 +788,7 @@ void ABlasterCharacter::AimButtonPressed()
 
 void ABlasterCharacter::AimButtonReleased()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
@@ -884,6 +898,7 @@ void ABlasterCharacter::Jump()
 
 void ABlasterCharacter::FireButtonPressed()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
@@ -893,6 +908,7 @@ void ABlasterCharacter::FireButtonPressed()
 
 void ABlasterCharacter::FireButtonReleased()
 {
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
@@ -1153,4 +1169,17 @@ bool ABlasterCharacter::IsHoldingTheFlag() const
 {
 	if (Combat == nullptr) return false;
 	return Combat->bHoldingTheFlag;
+}
+
+ETeam ABlasterCharacter::GetTeam()
+{
+	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
+	if (BlasterPlayerState == nullptr) return ETeam::ET_NoTeam;
+	return BlasterPlayerState->GetTeam();
+}
+
+void ABlasterCharacter::SetHoldingTheFlag(bool bHolding)
+{
+	if (Combat == nullptr) return;
+	Combat->bHoldingTheFlag = bHolding;
 }
