@@ -56,7 +56,7 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 			*
 			* Our round trip RPCs below are better for accuracy but more expensive
 			*/
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing() * 4: %d"), PlayerState->GetPing() * 4);
+			//UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing() * 4: %d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold)
 			{
 				HighPingWarning();
@@ -106,6 +106,44 @@ void ABlasterPlayerController::ShowReturnToMainMenu()
 	}
 }
 
+void ABlasterPlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* Victim)
+{
+	ClientElimAnnouncement(Attacker, Victim);
+}
+
+void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
+{
+	APlayerState* Self = GetPlayerState<APlayerState>();
+	if (Attacker && Victim && Self)
+	{
+		BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+		if (BlasterHUD)
+		{
+			if (Attacker == Self && Victim != Self)
+			{
+				BlasterHUD->AddElimAnnouncement("You", Victim->GetPlayerName());
+				return;
+			}
+			if (Victim == Self && Attacker != Self)
+			{
+				BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), "You");
+				return;
+			}
+			if (Attacker == Victim && Attacker == Self)
+			{
+				BlasterHUD->AddElimAnnouncement("You", "Yourself");
+				return;
+			}
+			if (Attacker == Victim && Attacker != Self)
+			{
+				BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), "Themselves");
+				return;
+			}
+			//All the edges fail we were not involved
+			BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), Victim->GetPlayerName());
+		}
+	}
+}
 void ABlasterPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -311,14 +349,14 @@ void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 		BlasterHUD->CharacterOverlay->WeaponAmmoAmount;
 	if (bHUDValid)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Valid HUD in SetHUDWeaponAmmo"));
+		//UE_LOG(LogTemp, Warning, TEXT("Valid HUD in SetHUDWeaponAmmo"));
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
-		UE_LOG(LogTemp, Warning, TEXT("SetHUDWeaponAmmo Value: %d"), Ammo);
+		//UE_LOG(LogTemp, Warning, TEXT("SetHUDWeaponAmmo Value: %d"), Ammo);
 		BlasterHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Should Poll Init -- SetHUDWeaponAmmo"));
+		//UE_LOG(LogTemp, Warning, TEXT("Should Poll Init -- SetHUDWeaponAmmo"));
 		bInitializeWeaponAmmo = true;
 		HUDWeaponAmmo = Ammo;
 	}

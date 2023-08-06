@@ -44,7 +44,7 @@ void ABlasterGameMode::Tick(float DeltaTime)
 		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Moving to Cooldown"));
+			//UE_LOG(LogTemp, Warning, TEXT("Moving to Cooldown"));
 			SetMatchState(MatchState::Cooldown);
 		}
 	}
@@ -53,7 +53,7 @@ void ABlasterGameMode::Tick(float DeltaTime)
 		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Should restart!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Should restart!"));
 			RestartGame();
 		}
 	}
@@ -126,6 +126,16 @@ void ABlasterGameMode::PlayerEliminated(ABlasterCharacter* ElimmedCharacter, ABl
 	if (ElimmedCharacter)
 	{
 		ElimmedCharacter->Elim(false);
+	}
+
+	//iterate through every player controller and call brodcast elim
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABlasterPlayerController* BlasterPlayer = Cast<ABlasterPlayerController>(*It);
+		if (BlasterPlayer && AttackerPlayerState && VictimPlayerState)
+		{
+			BlasterPlayer->BroadcastElim(AttackerPlayerState, VictimPlayerState);
+		}
 	}
 }
 

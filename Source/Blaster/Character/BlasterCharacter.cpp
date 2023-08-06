@@ -483,6 +483,13 @@ void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	{
 		ShowSniperScopeWidget(false);
 	}
+
+	//Destroy crown as soon as player eliminated
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
+
 	//set the timer for respawn
 	GetWorldTimerManager().SetTimer(
 		ElimTimer,
@@ -963,11 +970,11 @@ void ABlasterCharacter::UpdateHUDShield()
 
 void ABlasterCharacter::UpdateHUDAmmo()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Top of UpdateHUDAmmo in BlasterCharacter.cpp"));
+	//UE_LOG(LogTemp, Warning, TEXT("Top of UpdateHUDAmmo in BlasterCharacter.cpp"));
 	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (BlasterPlayerController && Combat && Combat->EquippedWeapon)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Valid playercontroller && combat && equipped weapon in UpdateHUDAmmo in BlasterCharacter.cpp"));
+		//UE_LOG(LogTemp, Warning, TEXT("Valid playercontroller && combat && equipped weapon in UpdateHUDAmmo in BlasterCharacter.cpp"));
 		BlasterPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
 		BlasterPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
 	}
