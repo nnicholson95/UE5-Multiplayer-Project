@@ -73,6 +73,9 @@ public:
 
 	void SetTeamColor(ETeam Team);
 
+	UPROPERTY(EditAnywhere)
+	float KillZThreshold;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

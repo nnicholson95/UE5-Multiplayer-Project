@@ -182,6 +182,13 @@ void ABlasterCharacter::Tick(float DeltaTime)
 	RotateInPlace(DeltaTime);
 	HideCameraIfCharacterClose();
 	PollInit();
+
+	// Check if the character's Z position is below a certain threshold
+	if (GetActorLocation().Z < KillZThreshold && !IsElimmed())
+	{
+		// Call the elimination logic function
+		Elim(false);
+	}
 }
 
 void ABlasterCharacter::RotateInPlace(float DeltaTime)
