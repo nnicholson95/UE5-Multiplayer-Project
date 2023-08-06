@@ -337,7 +337,9 @@ void ABlasterCharacter::GrenadeButtonPressed()
 
 void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* IntigatorController, AActor* DamageCauser)
 {
-	if (bElimmed) return;
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
+	if (bElimmed || BlasterGameMode == nullptr) return;
+	Damage = BlasterGameMode->CalculateDamage(IntigatorController, Controller, Damage);
 
 	//Interrupt recharge if shot -- this is set to true in the recharge shield fuction in Buff.cpp
 	if (Buff) Buff->bReplenishingShield = false;
@@ -376,7 +378,6 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 	);
 
 	if (Health == 0.f) {
-		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
 		if (BlasterGameMode)
 		{
 			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
@@ -507,7 +508,7 @@ void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 */
 void ABlasterCharacter::ElimTimerFinished()
 {
-	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	//GameMode not valid on clients so the next if check is the only thing that will call on clients
 	if (BlasterGameMode && !bLeftGame)
 	{
@@ -525,7 +526,7 @@ void ABlasterCharacter::ElimTimerFinished()
 */
 void ABlasterCharacter::ServerLeaveGame_Implementation()
 {
-	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
 	if (BlasterGameMode && BlasterPlayerState)
 	{
@@ -557,7 +558,7 @@ void ABlasterCharacter::Destroyed()
 	}
 
 	//Check to see blaster game mode valid and see if match is in progress
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
 	//If not game inProgress state delete weapon otherwise drop it to ground
 	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
@@ -1012,7 +1013,7 @@ void ABlasterCharacter::UpdateHUDAmmo()
 void ABlasterCharacter::SpawnDefaultWeapon()
 {
 	//if blaster game mode is not null we are on the server because it returns null elsewhere and we are in a map that uses this game mode
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	UWorld* World = GetWorld();
 	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
 	{
