@@ -399,7 +399,7 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 /*
 * Server side only elim function
 */
-void ABlasterCharacter::Elim()
+void ABlasterCharacter::Elim(bool bPlayerLeftGame)
 {
 	if (Combat)
 	{
@@ -413,21 +413,15 @@ void ABlasterCharacter::Elim()
 		}
 	}
 
-	MulticastElim();
-	//set the timer for respawn
-	GetWorldTimerManager().SetTimer(
-		ElimTimer,
-		this,
-		&ABlasterCharacter::ElimTimerFinished,
-		ElimDelay
-	);
+	MulticastElim(bPlayerLeftGame);
 }
 
 /*
 * Multicast RPC that handles player elimination and synchronizes character states
 */
-void ABlasterCharacter::MulticastElim_Implementation()
+void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 {
+	bLeftGame = bPlayerLeftGame;
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDWeaponAmmo(0);
@@ -486,6 +480,13 @@ void ABlasterCharacter::MulticastElim_Implementation()
 	{
 		ShowSniperScopeWidget(false);
 	}
+	//set the timer for respawn
+	GetWorldTimerManager().SetTimer(
+		ElimTimer,
+		this,
+		&ABlasterCharacter::ElimTimerFinished,
+		ElimDelay
+	);
 }
 
 /*
@@ -496,9 +497,29 @@ void ABlasterCharacter::MulticastElim_Implementation()
 void ABlasterCharacter::ElimTimerFinished()
 {
 	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-	if (BlasterGameMode)
+	//GameMode not valid on clients so the next if check is the only thing that will call on clients
+	if (BlasterGameMode && !bLeftGame)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
+	}
+	if (bLeftGame && IsLocallyControlled())
+	{
+		//Broadcast to our bound delegate to call the callback function
+		OnLeftGame.Broadcast();
+	}
+}
+
+/*
+* Server RPC so the server is notified of the character leaving
+*/
+void ABlasterCharacter::ServerLeaveGame_Implementation()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
+	if (BlasterGameMode && BlasterPlayerState)
+	{
+		//Player Left Game is called in the game mode to handle book keeping
+		BlasterGameMode->PlayerLeftGame(BlasterPlayerState);
 	}
 }
 

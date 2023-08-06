@@ -3,6 +3,7 @@
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubsystem.h"
 #include "GameFramework/GameModeBase.h"
+#include "Blaster/Character/BlasterCharacter.h"
 
 void UReturnToMainMenu::MenuSetup()
 {
@@ -49,6 +50,9 @@ bool UReturnToMainMenu::Initialize()
 	return true;
 }
 
+/*
+* Destroy session finishes and then this is called as a call back
+*/
 void UReturnToMainMenu::OnDestroySession(bool bWasSuccessful)
 {
 	if (!bWasSuccessful)
@@ -100,10 +104,40 @@ void UReturnToMainMenu::MenuTearDown()
 	}
 }
 
+/*
+* The player has pushed the button in the user widget
+*/
 void UReturnToMainMenu::ReturnButtonClicked()
 {
+	//disable the button to avoid spamming while logic is executed
 	ReturnButton->SetIsEnabled(false);
 
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* FirstPlayerController = World->GetFirstPlayerController();
+		if (FirstPlayerController)
+		{
+			ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(FirstPlayerController->GetPawn());
+			if (BlasterCharacter)
+			{
+				//Called on the character so we can synchronize leaving the game
+				BlasterCharacter->ServerLeaveGame();
+				BlasterCharacter->OnLeftGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
+			}
+			else
+			{
+				ReturnButton->SetIsEnabled(true);
+			}
+		}
+	}
+}
+
+/*
+* Delegate call back function called in ElimTimerFinished in BlasterCharacter.cpp
+*/
+void UReturnToMainMenu::OnPlayerLeftGame()
+{
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->DestroySession();
