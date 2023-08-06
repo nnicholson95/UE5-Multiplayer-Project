@@ -133,8 +133,7 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 					HitCharacters,
 					Start,
 					HitTargets,
-					BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime,
-					this
+					BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime
 				);
 			}
 		}

@@ -65,8 +65,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 						Start,
 						HitTarget,
 						//We subtract single trip time to make sure we ask for the accurrate time
-						BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime,
-						this //Already in weapon so this works
+						BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime
 					);
 				}
 			}

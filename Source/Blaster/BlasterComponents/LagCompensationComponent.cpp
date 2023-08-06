@@ -573,18 +573,20 @@ FFramePackage ULagCompensationComponent::GetFrameToCheck(ABlasterCharacter* HitC
 /*
 * Server RPC that the client will call to request the rewind and confirm hits
 */
-void ULagCompensationComponent::ServerScoreRequest_Implementation(ABlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* DamageCauser)
+void ULagCompensationComponent::ServerScoreRequest_Implementation(ABlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
 	FServerSideRewindResult Confirm = ServerSideRewind(HitCharacter, TraceStart, HitLocation, HitTime);
 
 	// HitConfirmed will be true if the server says we got a hit in the rewind
-	if (Character && HitCharacter && DamageCauser && Confirm.bHitConfirmed)
+	if (Character && HitCharacter && Character->GetEquippedWeapon() && Confirm.bHitConfirmed)
 	{
+		const float Damage = Confirm.bHeadshot ? Character->GetEquippedWeapon()->GetHeadShotDamage() : Character->GetEquippedWeapon()->GetDamage();
+
 		UGameplayStatics::ApplyDamage(
 			HitCharacter,
-			DamageCauser->GetDamage(),
+			Damage,
 			Character->Controller, //We know that the character that owns this lagcompensationComponent is the one shooting
-			DamageCauser,
+			Character->GetEquippedWeapon(),
 			UDamageType::StaticClass()
 		);
 	}
@@ -595,11 +597,13 @@ void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(ABla
 	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
 
 	// HitConfirmed will be true if the server says we got a hit in the rewind
-	if (Character && HitCharacter && Confirm.bHitConfirmed)
+	if (Character && HitCharacter && Confirm.bHitConfirmed && Character->GetEquippedWeapon())
 	{
+		const float Damage = Confirm.bHeadshot ? Character->GetEquippedWeapon()->GetHeadShotDamage() : Character->GetEquippedWeapon()->GetDamage();
+
 		UGameplayStatics::ApplyDamage(
 			HitCharacter,
-			Character->GetEquippedWeapon()->GetDamage(),
+			Damage,
 			Character->Controller, //We know that the character that owns this lagcompensationComponent is the one shooting
 			Character->GetEquippedWeapon(),
 			UDamageType::StaticClass()
@@ -612,22 +616,22 @@ void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(ABla
 * 
 * capable of handling multiple hit targets, which a shotgun spread could cause
 */
-void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<ABlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime, AWeapon* DamageCauser)
+void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<ABlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
 {
 	FShotgunServerSideRewindResult Confirm = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
 
 	for (auto& HitCharacter : HitCharacters)
 	{
-		if (HitCharacter == nullptr || DamageCauser == nullptr || Character == nullptr) continue;
+		if (HitCharacter == nullptr || Character->GetEquippedWeapon() == nullptr || Character == nullptr) continue;
 		float TotalDamage = 0.f;
 		if (Confirm.HeadShots.Contains(HitCharacter))
 		{
-			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * DamageCauser->GetDamage();
+			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * Character->GetEquippedWeapon()->GetHeadShotDamage();
 			TotalDamage += HeadShotDamage;
 		}
 		if (Confirm.BodyShots.Contains(HitCharacter))
 		{
-			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * DamageCauser->GetDamage();
+			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * Character->GetEquippedWeapon()->GetDamage();
 			TotalDamage += BodyShotDamage;
 		}
 
@@ -635,7 +639,7 @@ void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const T
 			HitCharacter,
 			TotalDamage,
 			Character->Controller, //We know that the character that owns this lagcompensationComponent is the one shooting
-			DamageCauser,
+			Character->GetEquippedWeapon(),
 			UDamageType::StaticClass()
 		);
 	}
