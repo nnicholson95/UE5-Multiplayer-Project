@@ -12,6 +12,7 @@ public:
 	AFlag();
 	virtual void Dropped() override;
 	void ResetFlag();
+	virtual void Tick(float DeltaTime) override;
 protected:
 	virtual void OnEquipped() override;
 	virtual void OnDropped() override;
@@ -22,6 +23,9 @@ private:
 	UStaticMeshComponent* FlagMesh;
 
 	FTransform InitialTransform;
+
+	UPROPERTY(EditAnywhere)
+	float KillZThreshold = -5000.f;
 public:
 	FORCEINLINE FTransform GetInitialTransform() const { return InitialTransform; }
 };

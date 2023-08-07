@@ -49,6 +49,16 @@ void AFlag::ResetFlag()
 	SetActorTransform(InitialTransform);
 }
 
+void AFlag::Tick(float DeltaTime)
+{
+	// Check if the character's Z position is below a certain threshold
+	if (GetActorLocation().Z < KillZThreshold)
+	{
+		// Call the elimination logic function
+		ResetFlag();
+	}
+}
+
 void AFlag::OnEquipped()
 {
 	ShowPickupWidget(false);
